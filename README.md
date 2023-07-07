@@ -3,17 +3,13 @@
 Implementation of Precomputed Radiance Transfer in Castle Game Engine.
 It's a technique for dynamic shading providing soft shadows.
 
-Run the main project, radiance_transfer, to see the result.
+Applications:
 
-There are also 2 helper applcations:
+- `radiance_transfer/` contains the main application that renders using Precomputed Radiance Transfer.
 
-- precompute/ contains the application to precompute radiance transfer.
-  Process your model using it, before displaying.
+- `precompute/` contains the application to precompute radiance transfer. Pre-process your models with this application, before displaying.
 
-- visualize_spherical_harmonics/ allows to better understand Spherical Harmonics,
-  which are important piece of Radiance Transfer. They allow to express
-  a function mapping 3D angle -> float (like a light intensity received at 3D
-  position) efficiently, as a small array of floats.
+- `visualize_spherical_harmonics/` allows to better understand Spherical Harmonics, which are important an piece of Radiance Transfer. They allow to express a function mapping 3D angle -> float (like a light intensity received at 3D position) efficiently, as a small array of floats.
 
 Using [Castle Game Engine](https://castle-engine.io/).
 
