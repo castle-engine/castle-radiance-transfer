@@ -1,0 +1,10 @@
+# compilation output
+castle-engine-output
+lib
+*.exe
+*.dll
+
+# Unix binaries
+/precompute/precompute_radiance_transfer
+/radiance_transfer/radiance_transfer
+/visualize_spherical_harmonics/visualize_spherical_harmonics
