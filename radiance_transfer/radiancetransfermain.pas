@@ -29,11 +29,6 @@ interface
 implementation
 
 uses SysUtils, Classes, Math,
-  {$ifdef OpenGLES}
-    CastleGL,
-  {$else}
-    {$ifdef FPC} GL, GLExt, {$else} OpenGL, OpenGLext, {$endif}
-  {$endif}
   CastleVectors, X3DNodes, CastleWindow, CastleShapes,
   CastleClassUtils, CastleUtils, CastleCameras,
   CastleGLUtils, CastleScene, CastleKeysMouse, CastleViewport,
