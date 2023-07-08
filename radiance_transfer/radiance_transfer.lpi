@@ -37,7 +37,7 @@
         <UnitName Value="radiancetransfermain"/>
       </Unit2>
       <Unit3>
-        <Filename Value="../common_code/sceneutilities.pas"/>
+        <Filename Value="../sceneutilities.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="sceneutilities"/>
       </Unit3>
@@ -49,8 +49,8 @@
       <Filename Value="radiance_transfer"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="code/;../common_code/"/>
-      <OtherUnitFiles Value="code/;../common_code/"/>
+      <IncludeFiles Value="code/;../"/>
+      <OtherUnitFiles Value="code/;../"/>
       <UnitOutputDirectory Value="castle-engine-output/standalone/lazarus-lib/$(TargetCPU)-$(TargetOS)"/>
       <Libraries Value="" />
     </SearchPaths>
