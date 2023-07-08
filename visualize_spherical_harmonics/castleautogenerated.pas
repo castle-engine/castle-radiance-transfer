@@ -22,7 +22,7 @@ uses CastleApplicationProperties, CastleWindow, CastleLog;
 
 initialization
   ApplicationProperties.ApplicationName := 'visualize_spherical_harmonics';
-  ApplicationProperties.Caption := 'visualize_spherical_harmonics';
+  ApplicationProperties.Caption := 'Visualize Spherical Harmonics';
   ApplicationProperties.Version := '0.1';
 
   if not IsLibrary then

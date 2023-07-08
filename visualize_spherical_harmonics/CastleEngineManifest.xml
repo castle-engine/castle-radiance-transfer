@@ -6,7 +6,10 @@ See https://castle-engine.io/project_manifest for documentation of this file.
 -->
 
 <project name="visualize_spherical_harmonics"
-  standalone_source="visualize_spherical_harmonics.dpr"
+  standalone_source="visualize_spherical_harmonics_standalone.dpr"
+  game_units="GameInitialize"
+  qualified_name="io.castleenigne.visualize.spherical.harmonics"
+  caption="Visualize Spherical Harmonics"
 >
   <compiler_options>
     <search_paths>
