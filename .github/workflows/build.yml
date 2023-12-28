@@ -46,7 +46,7 @@ jobs:
         run: cd visualize_spherical_harmonics && $CASTLE_ENGINE_PATH/tools/build-tool/castle-engine package --os=win64 --cpu=x86_64 --verbose
       - name: Archive Artifacts
         # See https://github.com/actions/upload-artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-build
           path: |
@@ -62,7 +62,7 @@ jobs:
       - name: Package Linux - visualize_spherical_harmonics
         run: cd visualize_spherical_harmonics && $CASTLE_ENGINE_PATH/tools/build-tool/castle-engine package --os=linux --cpu=x86_64 --verbose
       - name: Archive Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-build
           path: |
@@ -79,7 +79,7 @@ jobs:
       - name: Package Android - visualize_spherical_harmonics
         run: cd visualize_spherical_harmonics && $CASTLE_ENGINE_PATH/tools/build-tool/castle-engine package --target=android --verbose
       - name: Archive Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: android-build
           path: |
@@ -112,7 +112,7 @@ jobs:
       - name: Package macOS - visualize_spherical_harmonics
         run: cd visualize_spherical_harmonics && $CASTLE_ENGINE_PATH/tools/build-tool/castle-engine package --os=darwin --cpu=x86_64 --verbose
       - name: Archive Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-build
           path: |
