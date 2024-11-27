@@ -30,7 +30,7 @@ implementation
 
 uses SysUtils, Classes, Math,
   CastleVectors, X3DNodes, CastleWindow, CastleShapes,
-  CastleClassUtils, CastleUtils, CastleCameras,
+  CastleClassUtils, CastleUtils, CastleCameras, CastleUiControls,
   CastleGLUtils, CastleScene, CastleKeysMouse, CastleViewport,
   CastleFilesUtils, CastleLog, CastleInternalSphericalHarmonics, CastleImages,
   CastleInternalGLCubeMaps, CastleStringUtils, CastleParameters, CastleColors,
@@ -83,7 +83,6 @@ type
     procedure DrawLight(const RenderParams: TRenderParams);
   public
     procedure Render; override;
-    procedure RenderOnePass(const Params: TRenderParams); override;
   end;
 
 procedure TMyViewport.DrawLight(const RenderParams: TRenderParams);
@@ -176,144 +175,62 @@ begin
       {$ifdef FPC}@{$endif} DrawLight, 100, 100, LightIntensityScale);
 
     { no need to reset RenderContext.Viewport
-      inheried TCastleViewport.Render calls
+      inherited TCastleViewport.Render calls
       ApplyProjection that will already do it. }
   end;
 
+  if ViewMode = vmNormal then
+    RemoveSceneColors(Scene)
+  else
+    SetSceneColors(Scene, {$ifdef FPC}@{$endif} VertexColor);
+
   inherited;
 end;
 
-procedure TMyViewport.RenderOnePass(const Params: TRenderParams);
-begin
-  if (not Params.Transparent) and (true in Params.ShadowVolumesReceivers) then
-  begin
-    if ViewMode = vmNormal then
-      RemoveSceneColors(Scene)
-    else
-      SetSceneColors(Scene, {$ifdef FPC}@{$endif} VertexColor);
+{ TMyView --------------------------------------------------------------------- }
+
+type
+  { View to contain whole UI and to handle events, like update and menu clicks. }
+  TMyView = class(TCastleView)
+  private
+    Viewport: TMyViewport;
+    procedure MenuItemClick(const Item: TMenuItem);
+  public
+    procedure Start; override;
+    procedure Stop; override;
+    procedure Update(const SecondsPassed: Single; var HandleInput: boolean); override;
   end;
-  inherited;
-end;
 
 var
-  Viewport: TMyViewport;
+  MyView: TMyView;
 
-procedure MenuClick(Container: TCastleContainer; Item: TMenuItem);
-begin
-  case Item.IntData of
-    10: ViewMode := vmNormal;
-    11: ViewMode := vmSimpleOcclusion;
-    12: ViewMode := vmFull;
-    20: with Scene.RenderOptions do Lighting := not Lighting;
-    100: Window.Container.SaveScreenToDefaultFile;
-    200: Window.Close;
-    else Exit;
-  end;
-  Window.Invalidate;
-end;
+procedure TMyView.Start;
 
-procedure Update(Container: TCastleContainer);
-
-  procedure ChangeLightPosition(Coord, Change: Integer);
+  function CreateLightVisualizeNodes(out Material: TUnlitMaterialNode; out Sphere: TSphereNode): TX3DRootNode;
+  var
+    SphereShape: TShapeNode;
+    Appearance: TAppearanceNode;
   begin
-    LightPos.Data[Coord] := LightPos.Data[Coord] +
-     Change * Window.Fps.SecondsPassed *
-      { scale by Box3DAvgSize, to get similar move on all models }
-      Scene.BoundingBox.AverageSize;
-    Window.Invalidate;
+    Result := TX3DRootNode.Create;
+
+    Sphere := TSphereNode.CreateWithShape(SphereShape);
+    Result.AddChildren(SphereShape);
+
+    Material := TUnlitMaterialNode.Create;
+
+    Appearance := TAppearanceNode.Create;
+    Appearance.Material := Material;
+
+    SphereShape.Appearance := Appearance;
   end;
 
-  procedure ChangeLightRadius(Change: Float);
-  begin
-    LightRadius := LightRadius * Power(Change, Window.Fps.SecondsPassed);
-    Window.Invalidate;
-  end;
-
-  procedure ChangeLightIntensityScale(Change: Float);
-  begin
-    LightIntensityScale :=
-      LightIntensityScale * Power(Change, Window.Fps.SecondsPassed);
-    Window.Invalidate;
-  end;
-
-begin
-  if Window.Pressed[keyA] then ChangeLightPosition(0, -1);
-  if Window.Pressed[keyD] then ChangeLightPosition(0,  1);
-  if Window.Pressed[keyS] then ChangeLightPosition(2, -1);
-  if Window.Pressed[keyW] then ChangeLightPosition(2,  1);
-  if Window.Pressed[keyQ] then ChangeLightPosition(1, -1);
-  if Window.Pressed[keyE] then ChangeLightPosition(1,  1);
-
-  if Window.Pressed[keyR] then
-  begin
-    if mkShift in Window.Pressed.Modifiers then
-      ChangeLightRadius(1/1.8) else
-      ChangeLightRadius(1.8);
-  end;
-
-  if Window.Pressed[keyL] then
-  begin
-    if mkShift in Window.Pressed.Modifiers then
-      ChangeLightIntensityScale(1/1.5) else
-      ChangeLightIntensityScale(1.5);
-  end;
-end;
-
-function CreateMainMenu: TMenu;
-var
-  M: TMenu;
-  Radio: TMenuItemRadio;
-  RadioGroup: TMenuItemRadioGroup;
-begin
-  Result := TMenu.Create('Main menu');
-  M := TMenu.Create('_Program');
-
-    Radio := TMenuItemRadio.Create('_Normal (no PRT)', 10, ViewMode = vmNormal, true);
-    RadioGroup := Radio.Group;
-    M.Append(Radio);
-
-    Radio := TMenuItemRadio.Create('_Simple Occlusion', 11, ViewMode = vmSimpleOcclusion, true);
-    Radio.Group := RadioGroup;
-    M.Append(Radio);
-
-    Radio := TMenuItemRadio.Create('_Full Radiance Transfer', 12, ViewMode = vmFull, true);
-    Radio.Group := RadioGroup;
-    M.Append(Radio);
-
-    M.Append(TMenuSeparator.Create);
-    M.Append(TMenuItemChecked.Create('Use Normal _Lighting', 20, { Scene.RenderOptions.Lighting } true, true));
-    M.Append(TMenuSeparator.Create);
-    M.Append(TMenuItem.Create('_Save Screen ...', 100, keyF5));
-    M.Append(TMenuSeparator.Create);
-    M.Append(TMenuItem.Create('_Exit', 200));
-    Result.Append(M);
-end;
-
-function CreateLightVisualizeNodes(out Material: TUnlitMaterialNode; out Sphere: TSphereNode): TX3DRootNode;
-var
-  SphereShape: TShapeNode;
-  Appearance: TAppearanceNode;
-begin
-  Result := TX3DRootNode.Create;
-
-  Sphere := TSphereNode.CreateWithShape(SphereShape);
-  Result.AddChildren(SphereShape);
-
-  Material := TUnlitMaterialNode.Create;
-
-  Appearance := TAppearanceNode.Create;
-  Appearance.Material := Material;
-
-  SphereShape.Appearance := Appearance;
-end;
-
-{ One-time initialization of resources. }
-procedure ApplicationInitialize;
 var
   URL: string;
   Background: TCastleRectangleControl;
   Navigation: TCastleExamineNavigation;
 begin
+  inherited;
+
   Parameters.CheckHighAtMost(1);
   if Parameters.High = 1 then
     URL := Parameters[1]
@@ -369,11 +286,118 @@ begin
   Navigation.AutoCenterOfRotation := false;
   Navigation.CenterOfRotation := TVector3.Zero;
 
-  Window.Controls.InsertFront(Viewport);
+  MyView := TMyView.Create(Application);
+  MyView.Viewport := Viewport;
 
-  Window.OnUpdate := @Update;
+  InsertFront(Viewport);
 
   InitializeSHBasisMap;
+
+  Window.OnMenuItemClick := {$ifdef FPC}@{$endif} MenuItemClick;
+end;
+
+procedure TMyView.Stop;
+begin
+  Window.OnMenuItemClick := nil;
+  inherited;
+end;
+
+procedure TMyView.MenuItemClick(const Item: TMenuItem);
+begin
+  case Item.IntData of
+    10: ViewMode := vmNormal;
+    11: ViewMode := vmSimpleOcclusion;
+    12: ViewMode := vmFull;
+    20: with Scene.RenderOptions do Lighting := not Lighting;
+    100: Container.SaveScreenToDefaultFile;
+    200: Window.Close;
+    else Exit;
+  end;
+end;
+
+procedure TMyView.Update(const SecondsPassed: Single; var HandleInput: boolean);
+
+  procedure ChangeLightPosition(Coord, Change: Integer);
+  begin
+    LightPos.Data[Coord] := LightPos.Data[Coord] +
+     Change * SecondsPassed *
+      { scale by Box3DAvgSize, to get similar move on all models }
+      Scene.BoundingBox.AverageSize;
+  end;
+
+  procedure ChangeLightRadius(Change: Float);
+  begin
+    LightRadius := LightRadius * Power(Change, SecondsPassed);
+  end;
+
+  procedure ChangeLightIntensityScale(Change: Float);
+  begin
+    LightIntensityScale :=
+      LightIntensityScale * Power(Change, SecondsPassed);
+  end;
+
+begin
+  inherited;
+
+  if Container.Pressed[keyA] then ChangeLightPosition(0, -1);
+  if Container.Pressed[keyD] then ChangeLightPosition(0,  1);
+  if Container.Pressed[keyS] then ChangeLightPosition(2, -1);
+  if Container.Pressed[keyW] then ChangeLightPosition(2,  1);
+  if Container.Pressed[keyQ] then ChangeLightPosition(1, -1);
+  if Container.Pressed[keyE] then ChangeLightPosition(1,  1);
+
+  if Container.Pressed[keyR] then
+  begin
+    if mkShift in Container.Pressed.Modifiers then
+      ChangeLightRadius(1/1.8)
+    else
+      ChangeLightRadius(1.8);
+  end;
+
+  if Container.Pressed[keyL] then
+  begin
+    if mkShift in Container.Pressed.Modifiers then
+      ChangeLightIntensityScale(1/1.5)
+    else
+      ChangeLightIntensityScale(1.5);
+  end;
+end;
+
+function CreateMainMenu: TMenu;
+var
+  M: TMenu;
+  Radio: TMenuItemRadio;
+  RadioGroup: TMenuItemRadioGroup;
+begin
+  Result := TMenu.Create('Main menu');
+  M := TMenu.Create('_Program');
+
+    Radio := TMenuItemRadio.Create('_Normal (no PRT)', 10, ViewMode = vmNormal, true);
+    RadioGroup := Radio.Group;
+    M.Append(Radio);
+
+    Radio := TMenuItemRadio.Create('_Simple Occlusion', 11, ViewMode = vmSimpleOcclusion, true);
+    Radio.Group := RadioGroup;
+    M.Append(Radio);
+
+    Radio := TMenuItemRadio.Create('_Full Radiance Transfer', 12, ViewMode = vmFull, true);
+    Radio.Group := RadioGroup;
+    M.Append(Radio);
+
+    M.Append(TMenuSeparator.Create);
+    M.Append(TMenuItemChecked.Create('Use Normal _Lighting', 20, { Scene.RenderOptions.Lighting } true, true));
+    M.Append(TMenuSeparator.Create);
+    M.Append(TMenuItem.Create('_Save Screen ...', 100, keyF5));
+    M.Append(TMenuSeparator.Create);
+    M.Append(TMenuItem.Create('_Exit', 200));
+    Result.Append(M);
+end;
+
+{ One-time initialization of resources. }
+procedure ApplicationInitialize;
+begin
+  MyView := TMyView.Create(Application);
+  Window.Container.View := MyView;
 end;
 
 initialization
@@ -392,5 +416,4 @@ initialization
   Window := TCastleWindow.Create(Application);
   Application.MainWindow := Window;
   Window.MainMenu := CreateMainMenu;
-  Window.OnMenuClick := @MenuClick;
 end.
