@@ -99,15 +99,10 @@ end;
 
 procedure TViewMain.TMyShVisualization.LocalRender(const Params: TRenderParams);
 begin
-  if (not Params.Transparent) and
-     (true in Params.ShadowVolumesReceivers) then
-  begin
-    { before every rendering clear Min/MaxSHValue, so that VertexColor can set them }
-    MinSHValue :=  MaxFloat;
-    MaxSHValue := -MaxFloat;
-    SetSceneColors(Self, {$ifdef FPC}@{$endif}VertexColor);
-  end;
-
+  { before every rendering clear Min/MaxSHValue, so that VertexColor can set them }
+  MinSHValue :=  MaxFloat;
+  MaxSHValue := -MaxFloat;
+  SetSceneColors(Self, {$ifdef FPC}@{$endif}VertexColor);
   inherited;
 end;
 

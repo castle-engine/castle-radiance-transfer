@@ -19,10 +19,12 @@ program precompute_radiance_transfer;
 
 uses SysUtils, CastleUtils, CastleVectors, CastleSceneCore, X3DNodes, X3DLoad,
   CastleInternalSphereSampling, CastleColors,
-  CastleInternalSphericalHarmonics, CastleParameters, CastleTimeUtils, CastleShapes;
+  CastleInternalSphericalHarmonics, CastleParameters, CastleTimeUtils,
+  CastleShapes, CastleInternalTriangleOctree, CastleRayTracer;
 
 var
   Scene: TCastleSceneCore;
+  OctreeVisibleTriangles: TTriangleOctree;
   Normals: TVector3List;
   SHBasisCount: Integer = 25;
   RaysPerVertex: Cardinal = 1000;
@@ -67,7 +69,7 @@ begin
       begin
         RayDirectionPT := RandomHemispherePointConst;
         RayDirection := PhiThetaToXYZ(RayDirectionPT, N);
-        if not Scene.InternalOctreeVisibleTriangles.IsRayCollision(V, RayDirection,
+        if not OctreeVisibleTriangles.IsRayCollision(V, RayDirection,
           nil, true { yes, ignore margin at start, to not hit V },
           nil) then
         begin
@@ -156,10 +158,11 @@ begin
   Parameters.Parse(Options, @OptionProc, nil);
   Parameters.CheckHigh(2);
 
+  OctreeVisibleTriangles := nil;
   Scene := TCastleSceneCore.Create(nil);
   try
     Scene.Load(Parameters[1]);
-    Scene.Spatial := [ssVisibleTriangles];
+    OctreeVisibleTriangles := CreateOctreeVisibleTrianglesForScene(Scene);
 
     TimeStart := ProcessTimer;
 
@@ -204,5 +207,8 @@ begin
 
     SaveNode(Scene.RootNode, Parameters[2],
       'radianceTransfer computed by precompute_radiance_transfer: ' + S);
-  finally FreeAndNil(Scene) end;
+  finally
+    FreeAndNil(Scene);
+    FreeAndNil(OctreeVisibleTriangles);
+  end;
 end.
